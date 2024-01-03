@@ -307,7 +307,7 @@ const struct LauncherTheme Launcher_ModernTheme = {
 	BitmapColor_RGB(153, 127, 172), /* background */
 	BitmapColor_RGB( 97,  81, 110), /* button border */
 	BitmapColor_RGB(189, 168, 206), /* active button */
-	BitmapColor_RGB(141, 114, 165), /* button foreground */
+	BitmapColor_RGB(141, 114, 165), /* button */
 	BitmapColor_RGB(162, 131, 186), /* button highlight */
 };
 const struct LauncherTheme Launcher_ClassicTheme = {
@@ -315,16 +315,24 @@ const struct LauncherTheme Launcher_ClassicTheme = {
 	BitmapColor_RGB( 41,  41,  41), /* background */
 	BitmapColor_RGB(  0,   0,   0), /* button border */
 	BitmapColor_RGB(126, 136, 191), /* active button */
-	BitmapColor_RGB(111, 111, 111), /* button foreground */
+	BitmapColor_RGB(111, 111, 111), /* button */
 	BitmapColor_RGB(168, 168, 168), /* button highlight */
+};
+const struct LauncherTheme Launcher_CoreTheme = {
+	false,
+	BitmapColor_RGB(255,  64,  205), /* background */
+	BitmapColor_RGB(64,  64,  64), /* button border */
+	BitmapColor_RGB(255,  255,  32), /* active button */
+	BitmapColor_RGB(255,  180,  32), /* button */
+	BitmapColor_RGB(255,  64, 205), /* button highlight */
 };
 const struct LauncherTheme Launcher_NordicTheme = {
 	false,
-	BitmapColor_RGB( 46,  52,  64), /* background */
-	BitmapColor_RGB( 59,  66,  82), /* button border */
-	BitmapColor_RGB( 66,  74,  90), /* active button */
-	BitmapColor_RGB( 59,  66,  82), /* button foreground */
-	BitmapColor_RGB( 76,  86, 106), /* button highlight */
+	BitmapColor_RGB(46,  52,  64), /* background */
+	BitmapColor_RGB(59,  66,  82), /* button border */
+	BitmapColor_RGB(66,  74,  90), /* active button */
+	BitmapColor_RGB(59,  66,  82), /* button */
+	BitmapColor_RGB(76,  86, 106), /* button highlight */
 };
 
 CC_NOINLINE static void ParseColor(const char* key, BitmapCol* color) {
@@ -528,18 +536,17 @@ void Launcher_DrawTitle(struct FontDesc* font, const char* text, struct Context2
 	struct DrawTextArgs args;
 	int x;
 
-	/* Skip dragging logo when very small window to save space */
+	// Skip dragging logo when very small window to save space
 	if (WindowInfo.Height < 300) return;
 
-	DrawTextArgs_Make(&args, &title, font, false);
+	DrawTextArgs_Make(&args, &title, font, true);
 	x = ctx->width / 2 - Drawer2D_TextWidth(&args) / 2;
 
 	Drawer2D.Colors['f'] = BITMAPCOLOR_BLACK;
-	Context2D_DrawText(ctx, &args, x + Display_ScaleX(4), Display_ScaleY(4));
+	Context2D_DrawText(ctx, &args, x, 0);
 	Drawer2D.Colors['f'] = BITMAPCOLOR_WHITE;
-	Context2D_DrawText(ctx, &args, x,                     0);
+	Context2D_DrawText(ctx, &args, x, 0);
 }
-
 void Launcher_MakeTitleFont(struct FontDesc* font) {
 	Drawer2D.BitmappedText = Launcher_BitmappedText();
 	Font_Make(font, 32, FONT_FLAGS_NONE);

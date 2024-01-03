@@ -125,7 +125,17 @@ void LButton_Add(void* screen, struct LButton* w, int width, int height, const c
 	LButton_SetConst(w, text);
 	LScreen_AddWidget(screen, w);
 }
+void LButton_Init(void* screen, struct LButton* w, int width, int height, const char* text,
+	const struct LLayout* layouts) {
+	w->VTABLE = &lbutton_VTABLE;
+	w->type = LWIDGET_BUTTON;
+	w->layouts = layouts;
+	w->autoSelectable = true;
 
+	LBackend_ButtonInit(w, width, height);
+	LButton_SetConst(w, text);
+	LScreen_AddWidget(screen, w);
+}
 void LButton_SetConst(struct LButton* w, const char* text) {
 	w->text = String_FromReadonly(text);
 	LBackend_ButtonUpdate(w);

@@ -1,21 +1,26 @@
 #ifndef CC_CONSTANTS_H
 #define CC_CONSTANTS_H
-/* 
+/*
 Defines useful constants
 Copyright 2014-2023 ClassiCube | Licensed under BSD-3
 */
 
 #define GAME_MAX_CMDARGS 5
-#define GAME_APP_VER "1.3.6"
+#define CC_APP_VER "1.3.6"
+#define APP_VER "17.7"
 #define GAME_API_VER 1
 
-#if defined CC_BUILD_WEB
-#define GAME_APP_ALT   "ClassiCube 1.3.6 web mobile"
-#define GAME_APP_NAME  "ClassiCube 1.3.6 web"
-#define GAME_APP_TITLE "ClassiCube"
-#else
+#if defined CC_BUILD_OG
 #define GAME_APP_NAME  "ClassiCube 1.3.6"
 #define GAME_APP_TITLE "ClassiCube 1.3.6"
+#else
+#define CC_APP_NAME  "ClassiCube 1.3.6"
+//Windows doesn't load these correctly, so use GAME_APP_NAME instead
+#define UNICODE_APP_NAME  "&dΩ.&eA.&6Δ. &dCore &ev17.&67"
+
+#define GAME_APP_NAME  "&dZ.&eE.&6T.&8A. &dCore &ev17.&67"
+
+#define GAME_APP_TITLE "Zeta Core v17.7"
 #endif
 
 /* Max number of characters strings can have. */
@@ -55,7 +60,7 @@ enum FACE_CONSTS {
 	FACE_ZMAX = 3, /* Face Z = 1 */
 	FACE_YMIN = 4, /* Face Y = 0 */
 	FACE_YMAX = 5, /* Face Y = 1 */
-	FACE_COUNT= 6  /* Number of faces on a cube */
+	FACE_COUNT = 6  /* Number of faces on a cube */
 };
 
 enum SKIN_TYPE { SKIN_64x32, SKIN_64x64, SKIN_64x64_SLIM, SKIN_INVALID = 0xF0 };
@@ -67,13 +72,16 @@ enum SKIN_TYPE { SKIN_64x32, SKIN_64x64, SKIN_64x64_SLIM, SKIN_INVALID = 0xF0 };
 #define Int32_MinValue  ((cc_int32)-2147483647L - (cc_int32)1L)
 #define Int32_MaxValue  ((cc_int32)2147483647L)
 
-/* Skins were moved to use Amazon S3, so link directly to avoid a pointless redirect */
+/* Skins were moved to use ClassiCube's content delivery network,
+so link directly to avoid a pointless redirect */
 #define SKINS_SERVER    "http://cdn.classicube.net/skin"
 #define UPDATES_SERVER  "http://cs.classicube.net/client"
 #define SERVICES_SERVER "https://www.classicube.net/api"
 #define RESOURCE_SERVER "http://static.classicube.net"
 /* Webpage where users can register for a new account */
 #define REGISTERNEW_URL "https://www.classicube.net/acc/register/"
+// Client download page
+#define CLIENT_URL "https://github.com/RandomStrangers/Zeta"
 
 #define DEFAULT_USERNAME "Singleplayer"
 #endif

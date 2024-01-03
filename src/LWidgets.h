@@ -73,6 +73,8 @@ struct LButton {
 };
 CC_NOINLINE void LButton_Add(void* screen, struct LButton* w, int width, int height, const char* text, 
 							LWidgetFunc onClick, const struct LLayout* layouts);
+CC_NOINLINE void LButton_Init(void* screen, struct LButton* w, int width, int height, const char* text,
+	const struct LLayout* layouts);
 CC_NOINLINE void LButton_SetConst(struct LButton* w, const char* text);
 CC_NOINLINE void LButton_DrawBackground(struct Context2D* ctx, int x, int y, int width, int height, cc_bool active);
 

@@ -657,13 +657,13 @@ void MFAScreen_SetActive(void) {
 *#########################################################################################################################*/
 static struct MainScreen {
 	LScreen_Layout
-	struct LButton btnLogin, btnResume, btnDirect, btnSPlayer, btnRegister, btnOptions, btnUpdates;
+	struct LButton btnLogin, btnResume, btnDirect, btnSPlayer, btnRegister, btnOptions, btnCCUpdate, btnClientUpdate;
 	struct LInput iptUsername, iptPassword;
 	struct LLabel lblStatus, lblUpdate;
 	cc_bool signingIn;
 } MainScreen;
 
-#define MAINSCREEN_MAX_WIDGETS 11
+#define MAINSCREEN_MAX_WIDGETS 30
 static struct LWidget* main_widgets[MAINSCREEN_MAX_WIDGETS];
 
 LAYOUTS main_iptUsername[] = { { ANCHOR_CENTRE_MIN, -140 }, { ANCHOR_CENTRE, -120 } };
@@ -677,6 +677,10 @@ LAYOUTS main_btnDirect[]  = { { ANCHOR_CENTRE,  0 }, { ANCHOR_CENTRE,  60 } };
 LAYOUTS main_btnSPlayer[] = { { ANCHOR_CENTRE,  0 }, { ANCHOR_CENTRE, 110 } };
 
 LAYOUTS main_btnRegister[] = { { ANCHOR_MIN,    6 }, { ANCHOR_MAX,  6 } };
+LAYOUTS main_btnCCUpdate[] = { { ANCHOR_MIN,  6 }, { ANCHOR_MAX,  40 } };
+
+LAYOUTS main_btnClientUpdate[] = { { ANCHOR_MAX,    6 }, { ANCHOR_MAX,  6 } };
+
 LAYOUTS main_btnOptions[]  = { { ANCHOR_CENTRE, 0 }, { ANCHOR_MAX,  6 } };
 LAYOUTS main_btnUpdates[]  = { { ANCHOR_MAX,    6 }, { ANCHOR_MAX,  6 } };
 
@@ -748,7 +752,11 @@ static void MainScreen_Register(void* w) {
 	cc_result res = Process_StartOpen(&regUrl);
 	if (res) Logger_SimpleWarn(res, "opening register webpage in browser");
 }
-
+static void MainScreen_Client_Update(void* w) {
+	static const cc_string CCUrl = String_FromConst(CLIENT_URL);
+	cc_result res = Process_StartOpen(&CCUrl);
+	if (res) Logger_SimpleWarn(res, "opening Client download page in browser");
+}
 static void MainScreen_Resume(void* w) {
 	struct ResumeInfo info;
 	MainScreen_GetResume(&info, true);
@@ -807,16 +815,16 @@ CC_NOINLINE static cc_uint32 MainScreen_GetVersion(const cc_string* version) {
 }
 
 static void MainScreen_ApplyUpdateLabel(struct MainScreen* s) {
-	static const cc_string currentStr = String_FromConst(GAME_APP_VER);
+	static const cc_string currentStr = String_FromConst(CC_APP_VER);
 	cc_uint32 latest, current;
 
 	if (CheckUpdateTask.Base.success) {
 		latest  = MainScreen_GetVersion(&CheckUpdateTask.latestRelease);
 		current = MainScreen_GetVersion(&currentStr);
 #ifdef CC_BUILD_FLATPAK
-		LLabel_SetConst(&s->lblUpdate, latest > current ? "&aUpdate available" : "&eUp to date");
+		LLabel_SetConst(&s->lblUpdate, latest > current ? "&aCC Update available" : "&eUp to date");
 #else
-		LLabel_SetConst(&s->lblUpdate, latest > current ? "&aNew release" : "&eUp to date");
+		LLabel_SetConst(&s->lblUpdate, latest > current ? "&aCC New release" : "&eUp to date");
 #endif
 	} else {
 		LLabel_SetConst(&s->lblUpdate, "&cCheck failed");
@@ -847,17 +855,20 @@ static void MainScreen_Activated(struct LScreen* s_) {
 	if (Process_OpenSupported) {
 		LButton_Add(s, &s->btnRegister, 100, 35, "Register", 
 					MainScreen_Register, main_btnRegister);
+		LButton_Init(s, &s->btnClientUpdate, 100, 35, "Updates", main_btnClientUpdate);
+
 	}
 
 	LButton_Add(s, &s->btnOptions, 100, 35, "Options", 
 				SwitchToSettings, main_btnOptions);
 	if (Updater_Supported) {
-		LButton_Add(s, &s->btnUpdates,  100, 35, "Updates", 
-					SwitchToUpdates, main_btnUpdates);
+		LButton_Init(s, &s->btnCCUpdate, 111, 35, "CC Client", main_btnCCUpdate);
 	}
 
 	s->btnResume.OnHover   = MainScreen_ResumeHover;
 	s->btnResume.OnUnhover = MainScreen_ResumeUnhover;
+	s->btnCCUpdate.OnClick = SwitchToUpdates;
+	s->btnClientUpdate.OnClick = MainScreen_Client_Update;
 
 	if (CheckUpdateTask.Base.completed)
 		MainScreen_ApplyUpdateLabel(s);
@@ -973,7 +984,7 @@ void MainScreen_SetActive(void) {
 	s->Activated     = MainScreen_Activated;
 	s->LoadState     = MainScreen_Load;
 	s->Tick          = MainScreen_Tick;
-	s->title         = "ClassiCube";
+	s->title         = "&dZ.&eE.&6T.&8A.";
 	s->onEnterWidget = (struct LWidget*)&s->btnLogin;
 
 	Launcher_SetScreen((struct LScreen*)s);
@@ -1471,17 +1482,18 @@ void SettingsScreen_SetActive(void) {
 *#########################################################################################################################*/
 static struct ThemesScreen {
 	LScreen_Layout
-	struct LButton btnModern, btnClassic, btnNordic;
+	struct LButton btnModern, btnClassic, btnNordic, btnCore;
 	struct LButton btnCustom, btnBack;
 } ThemesScreen;
 
-#define THEME_SCREEN_MAX_WIDGETS 5
+#define THEME_SCREEN_MAX_WIDGETS 30
 static struct LWidget* themes_widgets[THEME_SCREEN_MAX_WIDGETS];
 
 LAYOUTS the_btnModern[]  = { { ANCHOR_CENTRE, 0 }, { ANCHOR_CENTRE, -120 } };
 LAYOUTS the_btnClassic[] = { { ANCHOR_CENTRE, 0 }, { ANCHOR_CENTRE,  -70 } };
-LAYOUTS the_btnNordic[]  = { { ANCHOR_CENTRE, 0 }, { ANCHOR_CENTRE,  -20 } };
-LAYOUTS the_btnCustom[]  = { { ANCHOR_CENTRE, 0 }, { ANCHOR_CENTRE,  120 } };
+LAYOUTS the_btnNordic[] = { { ANCHOR_CENTRE, 0 }, { ANCHOR_CENTRE,  -20 } };
+LAYOUTS the_btnCore[]  = { { ANCHOR_CENTRE, 0 }, { ANCHOR_CENTRE,  30 } };
+LAYOUTS the_btnCustom[]  = { { ANCHOR_CENTRE, 0 }, { ANCHOR_CENTRE,  80 } };
 LAYOUTS the_btnBack[]    = { { ANCHOR_CENTRE, 0 }, { ANCHOR_CENTRE,  170 } };
 
 
@@ -1497,10 +1509,12 @@ static void ThemesScreen_Modern(void* w) {
 static void ThemesScreen_Classic(void* w) {
 	ThemesScreen_Set(&Launcher_ClassicTheme);
 }
+static void ThemesScreen_Core(void* w) {
+	ThemesScreen_Set(&Launcher_CoreTheme);
+}
 static void ThemesScreen_Nordic(void* w) {
 	ThemesScreen_Set(&Launcher_NordicTheme);
 }
-
 static void ThemesScreen_Activated(struct LScreen* s_) {
 	struct ThemesScreen* s = (struct ThemesScreen*)s_;
 
@@ -1508,8 +1522,10 @@ static void ThemesScreen_Activated(struct LScreen* s_) {
 				ThemesScreen_Modern,  the_btnModern);
 	LButton_Add(s, &s->btnClassic, 200, 35, "Classic", 
 				ThemesScreen_Classic, the_btnClassic);
-	LButton_Add(s, &s->btnNordic,  200, 35, "Nordic",  
-				ThemesScreen_Nordic,  the_btnNordic);
+	LButton_Add(s, &s->btnNordic, 200, 35, "Nordic",
+				ThemesScreen_Nordic, the_btnNordic);
+	LButton_Add(s, &s->btnCore,  200, 35, "Core",  
+				ThemesScreen_Core,  the_btnCore);
 	LButton_Add(s, &s->btnCustom,  200, 35, "Custom",  
 				SwitchToColours,      the_btnCustom);
 	LButton_Add(s, &s->btnBack,     80, 35, "Back",    
@@ -1538,7 +1554,7 @@ static struct UpdatesScreen {
 	LScreen_Layout
 	struct LLine seps[2];
 	struct LButton btnRel[2], btnDev[2], btnBack;
-	struct LLabel  lblYour, lblRel, lblDev, lblInfo, lblStatus;
+	struct LLabel  lblYour, /*lblRel, */ lblDev, lblInfo, lblStatus;
 	int buildProgress, buildIndex;
 	cc_bool pendingFetch, release;
 } UpdatesScreen;
@@ -1550,20 +1566,25 @@ LAYOUTS upd_lblYour[] = { { ANCHOR_CENTRE, -5 }, { ANCHOR_CENTRE, -120 } };
 LAYOUTS upd_seps0[]   = { { ANCHOR_CENTRE,  0 }, { ANCHOR_CENTRE, -100 } };
 LAYOUTS upd_seps1[]   = { { ANCHOR_CENTRE,  0 }, { ANCHOR_CENTRE,   -5 } };
 
-LAYOUTS upd_lblRel[]    = { { ANCHOR_CENTRE, -20 }, { ANCHOR_CENTRE, -75 } };
-LAYOUTS upd_lblDev[]    = { { ANCHOR_CENTRE, -30 }, { ANCHOR_CENTRE,  20 } };
+//LAYOUTS upd_lblRel[]    = { { ANCHOR_CENTRE, -20 }, { ANCHOR_CENTRE, -75 } };
+//LAYOUTS upd_lblDev[]    = { { ANCHOR_CENTRE, -30 }, { ANCHOR_CENTRE,  20 } };
+LAYOUTS upd_lblDev[]    = { { ANCHOR_CENTRE, -20 }, { ANCHOR_CENTRE, -75 } };
+
 LAYOUTS upd_lblInfo[]   = { { ANCHOR_CENTRE,   0 }, { ANCHOR_CENTRE, 105 } };
 LAYOUTS upd_lblStatus[] = { { ANCHOR_CENTRE,   0 }, { ANCHOR_CENTRE, 130 } };
 LAYOUTS upd_btnBack[]   = { { ANCHOR_CENTRE,   0 }, { ANCHOR_CENTRE, 170 } };
 
 /* Update button layouts when 1 build */
-LAYOUTS upd_btnRel0_1[] = { { ANCHOR_CENTRE,   0 }, { ANCHOR_CENTRE, -40 } };
-LAYOUTS upd_btnDev0_1[] = { { ANCHOR_CENTRE,   0 }, { ANCHOR_CENTRE,  55 } };
+//LAYOUTS upd_btnRel0_1[] = { { ANCHOR_CENTRE,   0 }, { ANCHOR_CENTRE, -40 } };
+//LAYOUTS upd_btnDev0_1[] = { { ANCHOR_CENTRE,   0 }, { ANCHOR_CENTRE,  55 } };
+LAYOUTS upd_btnDev0_1[] = { { ANCHOR_CENTRE,   0 }, { ANCHOR_CENTRE, -40 } };
 /* Update button layouts when 2 builds */
 LAYOUTS upd_btnRel0_2[] = { { ANCHOR_CENTRE, -80 }, { ANCHOR_CENTRE, -40 } };
 LAYOUTS upd_btnRel1_2[] = { { ANCHOR_CENTRE,  80 }, { ANCHOR_CENTRE, -40 } };
-LAYOUTS upd_btnDev0_2[] = { { ANCHOR_CENTRE, -80 }, { ANCHOR_CENTRE,  55 } };
-LAYOUTS upd_btnDev1_2[] = { { ANCHOR_CENTRE,  80 }, { ANCHOR_CENTRE,  55 } };
+/*LAYOUTS upd_btnDev0_2[] = {{ANCHOR_CENTRE, -80}, {ANCHOR_CENTRE,  55}};
+LAYOUTS upd_btnDev1_2[] = { { ANCHOR_CENTRE,  80 }, { ANCHOR_CENTRE,  55 } };*/
+LAYOUTS upd_btnDev0_2[] = { { ANCHOR_CENTRE, -80 }, { ANCHOR_CENTRE,  -40 } };
+LAYOUTS upd_btnDev1_2[] = { { ANCHOR_CENTRE,  80 }, { ANCHOR_CENTRE,  -40 } };
 
 
 CC_NOINLINE static void UpdatesScreen_FormatTime(cc_string* str, int delta) {
@@ -1609,14 +1630,14 @@ static void UpdatesScreen_Format(struct LLabel* lbl, const char* prefix, cc_uint
 }
 
 static void UpdatesScreen_FormatBoth(struct UpdatesScreen* s) {
-	UpdatesScreen_Format(&s->lblRel, "Latest release: ",   CheckUpdateTask.relTimestamp);
-	UpdatesScreen_Format(&s->lblDev, "Latest dev build: ", CheckUpdateTask.devTimestamp);
+	//UpdatesScreen_Format(&s->lblRel, "Latest CC release: ",   CheckUpdateTask.relTimestamp);
+	UpdatesScreen_Format(&s->lblDev, "Latest CC dev build: ", CheckUpdateTask.devTimestamp);
 }
 
 static void UpdatesScreen_UpdateHeader(struct UpdatesScreen* s, cc_string* str) {
 	const char* message;
-	if ( s->release) message = "&eFetching latest release ";
-	if (!s->release) message = "&eFetching latest dev build ";
+	//if ( s->release) message = "&eFetching latest CC release ";
+	if (!s->release) message = "&eFetching latest CC dev build ";
 
 	String_Format2(str, "%c%c", message, Updater_Info.builds[s->buildIndex].name);
 }
@@ -1625,7 +1646,7 @@ static void UpdatesScreen_DoFetch(struct UpdatesScreen* s) {
 	cc_string str; char strBuffer[STRING_SIZE];
 	cc_uint64 time;
 	
-	time = s->release ? CheckUpdateTask.relTimestamp : CheckUpdateTask.devTimestamp;
+	time = s->release; /* ? CheckUpdateTask.relTimestamp :*/ CheckUpdateTask.devTimestamp;
 	if (!time || FetchUpdateTask.Base.working) return;
 	FetchUpdateTask_Run(s->release, s->buildIndex);
 
@@ -1645,7 +1666,7 @@ static void UpdatesScreen_Get(cc_bool release, int buildIndex) {
 	/*  therefore update fetching would not actually occur. (as timestamp is 0) */
 	/*  By storing requested build, it can be fetched later upon completion. */
 	s->pendingFetch = true;
-	s->release      = release;
+	//s->release      = release;
 	s->buildIndex   = buildIndex;
 	UpdatesScreen_DoFetch(s);
 }
@@ -1677,7 +1698,7 @@ static void FetchUpdatesError(struct HttpRequest* req) {
 	cc_string str; char strBuffer[STRING_SIZE];
 	String_InitArray(str, strBuffer);
 
-	Launcher_DisplayHttpError(req, "fetching update", &str);
+	Launcher_DisplayHttpError(req, "fetching CC update", &str);
 	LLabel_SetText(&UpdatesScreen.lblStatus, &str);
 }
 
@@ -1694,8 +1715,8 @@ static void UpdatesScreen_FetchTick(struct UpdatesScreen* s) {
 	Launcher_ShouldUpdate = true;
 }
 
-static void UpdatesScreen_Rel_0(void* w) { UpdatesScreen_Get(true,  0); }
-static void UpdatesScreen_Rel_1(void* w) { UpdatesScreen_Get(true,  1); }
+//static void UpdatesScreen_Rel_0(void* w) { UpdatesScreen_Get(true,  0); }
+//static void UpdatesScreen_Rel_1(void* w) { UpdatesScreen_Get(true,  1); }
 static void UpdatesScreen_Dev_0(void* w) { UpdatesScreen_Get(false, 0); }
 static void UpdatesScreen_Dev_1(void* w) { UpdatesScreen_Get(false, 1); }
 
@@ -1706,23 +1727,23 @@ static void UpdatesScreen_AddWidgets(struct UpdatesScreen* s) {
 	LLine_Add(s,   &s->seps[1],   320,                   upd_seps1);
 	LLabel_Add(s,  &s->lblYour, "Your build: (unknown)", upd_lblYour);
 
-	LLabel_Add(s,  &s->lblRel, "Latest release: Checking..",   upd_lblRel);
-	LLabel_Add(s,  &s->lblDev, "Latest dev build: Checking..", upd_lblDev);
+	//LLabel_Add(s,  &s->lblRel, "Latest CC release: Checking..",   upd_lblRel);
+	LLabel_Add(s,  &s->lblDev, "Latest CC dev build: Checking..", upd_lblDev);
 	LLabel_Add(s,  &s->lblStatus, "",              upd_lblStatus);
 	LLabel_Add(s,  &s->lblInfo, Updater_Info.info, upd_lblInfo);
 	LButton_Add(s, &s->btnBack, 80, 35, "Back", 
 				SwitchToMain, upd_btnBack);
 
 	if (builds >= 1) {
-		LButton_Add(s, &s->btnRel[0], 130, 35, Updater_Info.builds[0].name,
-							UpdatesScreen_Rel_0, builds == 1 ? upd_btnRel0_1 : upd_btnRel0_2);
+		/*LButton_Add(s, &s->btnRel[0], 130, 35, Updater_Info.builds[0].name,
+							UpdatesScreen_Rel_0, builds == 1 ? upd_btnRel0_1 : upd_btnRel0_2);*/
 		LButton_Add(s, &s->btnDev[0], 130, 35, Updater_Info.builds[0].name,
 							UpdatesScreen_Dev_0, builds == 1 ? upd_btnDev0_1 : upd_btnDev0_2);
 	}
 
 	if (builds >= 2) {
-		LButton_Add(s, &s->btnRel[1], 130, 35, Updater_Info.builds[1].name, 
-					UpdatesScreen_Rel_1, upd_btnRel1_2);
+		/*LButton_Add(s, &s->btnRel[1], 130, 35, Updater_Info.builds[1].name,
+					UpdatesScreen_Rel_1, upd_btnRel1_2);*/
 		LButton_Add(s, &s->btnDev[1], 130, 35, Updater_Info.builds[1].name, 
 					UpdatesScreen_Dev_1, upd_btnDev1_2);
 	}
@@ -1773,7 +1794,7 @@ void UpdatesScreen_SetActive(void) {
 	s->Activated      = UpdatesScreen_Activated;
 	s->Tick           = UpdatesScreen_Tick;
 	s->Deactivated    = UpdatesScreen_Deactivated;
-	s->title          = "Update game";
+	s->title          = "Update game to CC";
 	s->onEscapeWidget = (struct LWidget*)&s->btnBack;
 
 	Launcher_SetScreen((struct LScreen*)s);
