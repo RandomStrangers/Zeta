@@ -44,7 +44,6 @@ src/screenshots
 src/fontscache.txt
 src/.vs/
 .vs/
-.github/
 #GCC object files
 *.o
 
